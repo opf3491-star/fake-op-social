@@ -434,6 +434,47 @@ body.page-ready .particle{
 }
 #reactionGameControlsPanel button:hover{background:rgba(168,85,247,.18);}
 </style>
+
+<style id="allDeviceResponsiveFix">
+html,body{width:100%;min-width:0;}
+body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
+.shell{width:min(100%,520px);max-width:520px;}
+.social,.qr-btn,.game-launcher,.game-close,#reactionGameMenuBtn,#reactionGameControlsBtn,#reactionGameControlsPanel button,.game-start,.game-restart,.qr-btn,.qr-close{touch-action:manipulation;}
+@media (min-width:700px){
+  body{padding:32px;}
+  .shell{width:min(92vw,560px);padding:34px 28px 24px;}
+  .links{gap:14px;}
+  .social{min-height:62px;font-size:16px;}
+  .game-modal{width:min(88vw,700px);padding:24px;}
+  .reaction-area{height:min(68vh,520px);min-height:360px;}
+}
+@media (max-width:699px){
+  .game-overlay{padding:10px;}
+  .game-modal{width:min(96vw,520px);max-height:96vh;overflow:auto;}
+}
+@media (max-width:430px){
+  body{padding:10px;}
+  .shell{padding:24px 14px 18px;border-radius:26px;}
+  .logo{width:96px;height:96px;}
+  h1{font-size:25px;}
+  .bio{font-size:13px;margin-bottom:20px;}
+  .row-wrap{grid-template-columns:minmax(0,1fr) 48px;gap:7px;}
+  .social{min-height:54px;padding-left:48px;padding-right:42px;font-size:14px;}
+  .qr-btn{min-width:48px;border-radius:15px;}
+  .reaction-area{height:58vh;min-height:290px;}
+  .reaction-orb{width:68px;height:68px;}
+}
+@media (max-width:340px){
+  .row-wrap{grid-template-columns:minmax(0,1fr) 44px;}
+  .qr-btn{min-width:44px;}
+  .social{padding-left:43px;padding-right:38px;font-size:13px;}
+  .icon{left:11px;width:28px;height:28px;}
+  .arrow{right:11px;}
+}
+@media (pointer:coarse){
+  .social,.qr-btn,.game-start,.game-restart,#reactionGameMenuBtn,#reactionGameControlsBtn,#reactionGameControlsPanel button{min-height:44px;}
+}
+</style>
 </head>
 <body><div id="openingFx" aria-hidden="true"><div class="fx-core"></div></div>
 
@@ -560,35 +601,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeQR()});
 
 <script>
 function openSocial(event, key, webUrl){
-  event.preventDefault();
-
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  if (!isAndroid) {
-    window.location.href = webUrl;
-    return;
+  // Let the browser perform the normal link navigation on every device.
+  // App deep-linking can be added later without breaking desktop/tablet clicks.
+  if (event) {
+    event.stopPropagation();
   }
-
-  const intentMap = {
-    youtube: 'intent://www.youtube.com/@f-viq#Intent;scheme=https;package=com.google.android.youtube;end',
-    telegram: 'intent://t.me/fakeopx4w#Intent;scheme=https;package=org.telegram.messenger;end',
-    facebook: 'intent://www.facebook.com/share/1DyS69hzbT/#Intent;scheme=https;package=com.facebook.katana;end',
-    instagram: 'intent://www.instagram.com/faketools_vault/#Intent;scheme=https;package=com.instagram.android;end',
-    tiktok: 'intent://www.tiktok.com/@fake.in0#Intent;scheme=https;package=com.zhiliaoapp.musically;end'
-  };
-
-  const intentUrl = intentMap[key];
-  let fallbackTimer = setTimeout(function(){
-    window.location.href = webUrl;
-  }, 1300);
-
-  document.addEventListener('visibilitychange', function handler(){
-    if (document.hidden) {
-      clearTimeout(fallbackTimer);
-      document.removeEventListener('visibilitychange', handler);
-    }
-  }, {once:false});
-
-  window.location.href = intentUrl;
+  return true;
 }
 </script>
 
@@ -661,7 +679,10 @@ cards.forEach(card=>{
 const st={x:0,y:0,px:0,py:0,vx:0,vy:0,down:false,drag:false,fall:false,hold:null,startX:0,startY:0,moved:false}; state.set(card,st);
 const pos=e=>({x:e.clientX,y:e.clientY}); const clearHold=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
 function startHold(){clearHold();st.hold=setTimeout(()=>{if(!st.drag)return;st.drag=false;st.fall=true;active=null;clearHold();st.vy=Math.max(1.2,st.vy);fall();},2000);}
-function begin(e){if(st.fall||active)return;const p=pos(e);st.down=true;st.drag=false;st.moved=false;active=card;st.startX=p.x;st.startY=p.y;st.px=p.x-st.x;st.py=p.y-st.y;st.vx=st.vy=0;if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){} }
+function begin(e){
+if(e.target && e.target.closest && e.target.closest('a,button,input,select,textarea,[role="button"]')) return;
+if(st.fall||active)return;
+const p=pos(e);st.down=true;st.drag=false;st.moved=false;active=card;st.startX=p.x;st.startY=p.y;st.px=p.x-st.x;st.py=p.y-st.y;st.vx=st.vy=0;if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){} }
 function move(e){if(active!==card||!st.down)return;const p=pos(e),dx=p.x-st.startX,dy=p.y-st.startY;if(!st.drag){if(Math.hypot(dx,dy)<7)return;st.drag=true;st.moved=true;card.classList.add('dragging');startHold();}const nx=p.x-st.px,ny=p.y-st.py;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-10,Math.min(10,st.x*.02))}deg) scale(1.02)`;e.preventDefault();}
 function release(){if(active!==card)return;const wasDrag=st.drag;clearHold();active=null;st.down=false;st.drag=false;card.classList.remove('dragging');if(!wasDrag){st.moved=false;return;}const r=card.getBoundingClientRect();const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;if(outside){st.fall=true;st.vy=Math.max(1.5,st.vy);fall();}else restore();setTimeout(()=>st.moved=false,0);}
 function fall(){let last=performance.now();function tick(now){if(!st.fall)return;const dt=Math.min(32,now-last);last=now;st.vy+=.78*dt/16;st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;st.vx*=.995;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-18,Math.min(18,st.x*.035))}deg)`;if(st.y<innerHeight+260)requestAnimationFrame(tick);else setTimeout(()=>{st.fall=false;st.x=st.y=st.vx=st.vy=0;restore();},2200);}requestAnimationFrame(tick);}
