@@ -4,12 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#09050f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <title>FAKE OP • Social Hub</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+html,body{min-height:100%;font-family:Inter,system-ui,-apple-system,"SF Pro Display","SF Pro Text",Segoe UI,Arial,sans-serif}
 body{
-  min-height:100vh;display:grid;place-items:center;overflow-x:hidden;color:#fff;
+  min-height:100vh;min-height:100svh;display:grid;place-items:center;overflow-x:hidden;color:#fff;
   background:
     radial-gradient(circle at 15% 10%,rgba(145,55,255,.25),transparent 32%),
     radial-gradient(circle at 90% 85%,rgba(106,28,210,.18),transparent 35%),
@@ -175,7 +178,6 @@ body.page-ready .particle{
   cursor:grab;
   user-select:none;
   -webkit-user-select:none;
-  will-change:transform;
 }
 .row-wrap.dragging{
   touch-action:none;
@@ -190,6 +192,10 @@ body.page-ready .particle{
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.28));
 }
 
+/* Smooth, independent drag physics for each social link and QR button */
+.row-wrap .social,.row-wrap .qr-btn{will-change:transform;touch-action:none;user-select:none;-webkit-user-select:none;}
+.row-wrap .social.physics-dragging,.row-wrap .qr-btn.physics-dragging{cursor:grabbing;z-index:60;transition:none!important;box-shadow:0 16px 34px rgba(0,0,0,.30),0 0 20px rgba(164,86,255,.16);}
+.row-wrap .social.physics-falling,.row-wrap .qr-btn.physics-falling{z-index:70;transition:none!important;pointer-events:none;}
 /* Mini Reaction Game — corner launcher + premium modal */
 .game-launcher{
   position:fixed;right:16px;bottom:16px;z-index:80;
@@ -314,93 +320,30 @@ body.page-ready .particle{
 </style>
 
 <style id="reactionGameMenuStyles">
-#reactionGameMenu{
-  position:absolute;
-  top:12px;
-  right:12px;
-  z-index:1200;
-  font-family:inherit;
+#reactionSoundCorner{
+  position:absolute;top:-52px;right:0;z-index:1600;width:40px;height:40px;
+  border:1px solid rgba(255,255,255,.18);border-radius:13px;
+  background:linear-gradient(145deg,rgba(40,20,70,.88),rgba(18,10,34,.84));
+  color:#fff;display:grid;place-items:center;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 10px 28px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.08),0 0 18px rgba(168,85,247,.10);
+  font-size:17px;transition:transform .18s ease,background .18s ease,box-shadow .18s ease;
+  touch-action:manipulation;
 }
-#reactionGameMenuBtn{
-  width:38px;height:38px;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:12px;
-  background:rgba(25,16,45,.72);
-  color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-  backdrop-filter:blur(14px);
-  box-shadow:0 8px 25px rgba(0,0,0,.22);
-  font-size:18px;
-  transition:.2s ease;
-}
-#reactionGameMenuBtn:active{transform:scale(.94)}
-#reactionGameMenuPanel{
-  position:absolute;
-  top:46px;
-  right:0;
-  min-width:155px;
-  padding:7px;
-  border:1px solid rgba(255,255,255,.13);
-  border-radius:15px;
-  background:rgba(20,12,38,.92);
-  backdrop-filter:blur(18px);
-  box-shadow:0 16px 45px rgba(0,0,0,.35);
-  opacity:0;
-  transform:translateY(-7px) scale(.97);
-  pointer-events:none;
-  transition:opacity .18s ease,transform .18s ease;
-}
-#reactionGameMenu.open #reactionGameMenuPanel{
-  opacity:1;
-  transform:translateY(0) scale(1);
-  pointer-events:auto;
-}
-.reactionMenuItem{
-  width:100%;
-  border:0;
-  background:transparent;
-  color:#f7f2ff;
-  padding:10px 11px;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  gap:9px;
-  text-align:left;
-  cursor:pointer;
-  font-size:13px;
-}
-.reactionMenuItem:hover{background:rgba(255,255,255,.08)}
-.reactionMenuIcon{width:20px;text-align:center}
-#reactionPauseShade{
-  position:absolute;
-  inset:0;
-  z-index:1100;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  border-radius:inherit;
-  background:rgba(8,5,16,.42);
-  backdrop-filter:blur(4px);
-}
+#reactionSoundCorner:hover{transform:translateY(-1px);box-shadow:0 13px 34px rgba(0,0,0,.34),0 0 22px rgba(168,85,247,.12)}
+#reactionSoundCorner:active{transform:scale(.94)}
+@media (max-width:430px){#reactionSoundCorner{top:-48px;right:0;width:38px;height:38px}}
+@media (max-height:600px){#reactionSoundCorner{top:-46px}}
+#reactionSoundCorner.muted{opacity:.78}
+#reactionSoundCorner svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#reactionPauseShade{position:absolute;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;border-radius:inherit;background:rgba(8,5,16,.42);backdrop-filter:blur(4px)}
 #reactionPauseShade.show{display:flex}
-.reactionPauseCard{
-  padding:18px 24px;
-  border:1px solid rgba(255,255,255,.13);
-  border-radius:16px;
-  background:rgba(25,16,45,.9);
-  color:#fff;
-  text-align:center;
-}
+.reactionPauseCard{padding:18px 24px;border:1px solid rgba(255,255,255,.13);border-radius:16px;background:rgba(25,16,45,.9);color:#fff;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.3)}
 </style>
 
 <style id="reactionMenuCornerFix">
 #reactionArea{position:relative !important;}
-#reactionGameMenu{
-  position:absolute !important;
-  top:10px !important;
-  right:10px !important;
-}
 </style>
 
 <style id="reactionGameControlsStyles">
@@ -441,7 +384,8 @@ body.page-ready .particle{
 html,body{width:100%;min-width:0;}
 body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 .shell{width:min(100%,520px);max-width:520px;}
-.social,.qr-btn,.game-launcher,.game-close,#reactionGameMenuBtn,#reactionGameControlsBtn,#reactionGameControlsPanel button,.game-start,.game-restart,.qr-btn,.qr-close{touch-action:manipulation;}
+.social,.qr-btn{touch-action:none;}
+.game-launcher,.game-close,#reactionSoundCorner,#reactionGameControlsBtn,#reactionGameControlsPanel button,.game-start,.game-restart,.qr-close{touch-action:manipulation;}
 @media (min-width:700px){
   body{padding:32px;}
   .shell{width:min(92vw,560px);padding:34px 28px 24px;}
@@ -451,8 +395,8 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
   .reaction-area{height:min(68vh,520px);min-height:360px;}
 }
 @media (max-width:699px){
-  .game-overlay{padding:10px;}
-  .game-modal{width:min(96vw,520px);max-height:96vh;overflow:auto;}
+  .game-overlay{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));}
+  .game-modal{width:min(96vw,520px);max-height:96vh;max-height:96svh;overflow:visible;}
 }
 @media (max-width:430px){
   body{padding:10px;}
@@ -474,8 +418,22 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
   .arrow{right:11px;}
 }
 @media (pointer:coarse){
-  .social,.qr-btn,.game-start,.game-restart,#reactionGameMenuBtn,#reactionGameControlsBtn,#reactionGameControlsPanel button{min-height:44px;}
+  .social,.qr-btn,.game-start,.game-restart,#reactionSoundCorner,#reactionGameControlsBtn,#reactionGameControlsPanel button{min-height:44px;}
 }
+</style>
+
+<style id="finalQualityFixes">
+:root{color-scheme:dark}html{scroll-behavior:smooth}body{overscroll-behavior-x:none}body.modal-open{overflow:hidden}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:2px solid rgba(210,170,255,.9);outline-offset:3px}.row-wrap{position:relative}.row-wrap .social,.row-wrap .qr-btn{contain:layout paint}.qr-modal,.game-overlay{overscroll-behavior:contain}@media(max-height:560px) and (orientation:landscape){.game-overlay{align-items:start;padding:8px;overflow:auto}.game-modal{margin:auto;padding:14px}.reaction-area{height:calc(100vh - 150px);height:calc(100svh - 150px);min-height:230px}.game-sub{margin-bottom:8px}}@media(max-width:430px){.game-title{font-size:18px}.game-sub{font-size:11px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<style id="finalCrossDevicePolish">
+*,*::before,*::after{box-sizing:border-box}
+button,a{-webkit-tap-highlight-color:transparent}
+img,svg,canvas{max-width:100%}
+body{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.game-overlay{overscroll-behavior:contain}
+.game-modal{isolation:isolate}
+@supports not (height:100svh){.game-modal{max-height:96vh}}
 </style>
 </head>
 <body><div id="openingFx" aria-hidden="true"><div class="fx-core"></div></div>
@@ -487,6 +445,9 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 <div class="game-overlay" id="gameOverlay" aria-hidden="true">
   <div class="game-modal" role="dialog" aria-modal="true" aria-label="Reaction Time Game">
     <button class="game-close" id="gameClose" aria-label="Close">×</button>
+    <button id="reactionSoundCorner" type="button" aria-label="Sound On" title="Sound On">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10"/></svg>
+    </button>
     <div class="game-title">Reaction Time</div>
     <div class="game-sub">Wait for the orb. Tap it as fast as you can.</div>
     <div class="reaction-area" id="reactionArea"><button id="reactionGameControlsBtn" type="button" aria-label="Game controls" title="Game controls">☰</button>
@@ -521,7 +482,7 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
   </section>
   <nav class="links" aria-label="Social media links">
 <div class="row-wrap">
-<a class="social" href="https://youtube.com/@f-viq" onclick="openSocial(event,'youtube',this.href)">
+<a class="social" href="https://youtube.com/@f-viq" target="_blank" rel="noopener noreferrer" onclick="openSocial(event,'youtube',this.href)">
 <span class="icon"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.8V8.2l6.4 3.8-6.4 3.8Z"/></svg></span><span>YouTube</span><span class="arrow">↗</span>
 </a>
 <button class="qr-btn" type="button" aria-label="Show YouTube QR code" onclick="showQR('youtube','YouTube')">
@@ -529,7 +490,7 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 </button>
 </div>
 <div class="row-wrap">
-<a class="social" href="https://t.me/fakeopx4w" onclick="openSocial(event,'telegram',this.href)">
+<a class="social" href="https://t.me/fakeopx4w" target="_blank" rel="noopener noreferrer" onclick="openSocial(event,'telegram',this.href)">
 <span class="icon"><svg viewBox="0 0 24 24"><path d="M21.7 3.4 2.8 10.7c-1.3.5-1.3 1.3-.2 1.6l4.8 1.5 1.8 5.6c.2.6.1.8.7.8.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.6.3 1.8-.9l3.1-14.6c.3-1.5-.5-2.2-1.4-1.9ZM8.2 13.5l10.8-6.8c.5-.3.9-.1.5.2l-8.8 8-.3 3.2-1.6-4.6-2.9-.9c-.6-.2-.6-.6.3-.9Z"/></svg></span><span>Telegram</span><span class="arrow">↗</span>
 </a>
 <button class="qr-btn" type="button" aria-label="Show Telegram QR code" onclick="showQR('telegram','Telegram')">
@@ -537,7 +498,7 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 </button>
 </div>
 <div class="row-wrap">
-<a class="social" href="https://www.facebook.com/share/1DyS69hzbT/" onclick="openSocial(event,'facebook',this.href)">
+<a class="social" href="https://www.facebook.com/share/1DyS69hzbT/" target="_blank" rel="noopener noreferrer" onclick="openSocial(event,'facebook',this.href)">
 <span class="icon"><svg viewBox="0 0 24 24"><path d="M13.7 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.3-1.6 1.6-1.6h1.7V4.5c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.2H7.5V14h2.8v8h3.4Z"/></svg></span><span>Facebook</span><span class="arrow">↗</span>
 </a>
 <button class="qr-btn" type="button" aria-label="Show Facebook QR code" onclick="showQR('facebook','Facebook')">
@@ -545,7 +506,7 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 </button>
 </div>
 <div class="row-wrap">
-<a class="social" href="https://www.instagram.com/faketools_vault?igsh=MTY2MHV0Y3NldWVkeQ==" onclick="openSocial(event,'instagram',this.href)">
+<a class="social" href="https://www.instagram.com/faketools_vault?igsh=MTY2MHV0Y3NldWVkeQ==" target="_blank" rel="noopener noreferrer" onclick="openSocial(event,'instagram',this.href)">
 <span class="icon"><svg viewBox="0 0 24 24"><path d="M7.2 2h9.6A5.2 5.2 0 0 1 22 7.2v9.6a5.2 5.2 0 0 1-5.2 5.2H7.2A5.2 5.2 0 0 1 2 16.8V7.2A5.2 5.2 0 0 1 7.2 2Zm-.1 2A3.1 3.1 0 0 0 4 7.1v9.8A3.1 3.1 0 0 0 7.1 20h9.8a3.1 3.1 0 0 0 3.1-3.1V7.1A3.1 3.1 0 0 0 16.9 4H7.1Zm9.9 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0-3-3Z"/></svg></span><span>Instagram</span><span class="arrow">↗</span>
 </a>
 <button class="qr-btn" type="button" aria-label="Show Instagram QR code" onclick="showQR('instagram','Instagram')">
@@ -566,7 +527,7 @@ body{padding:clamp(10px,2.5vw,22px);overflow-x:hidden;}
 
 <div class="qr-modal" id="qrModal" aria-hidden="true" onclick="closeQR()">
 <div class="qr-card" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-<button class="qr-close" type="button" aria-label="Close" onclick="closeQR()">×</button>
+<button class="qr-close" id="qrClose" type="button" aria-label="Close" onclick="closeQR()">×</button>
 <div class="qr-kicker">SCAN TO OPEN</div>
 <h2 id="qrTitle">QR Code</h2>
 <div class="qr-holder"><img id="qr-youtube" class="qr-image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMsAAADLCAIAAABPmfBkAAADMUlEQVR42u3dQXKDMAxA0dLh/ldOL5CFVUWyTN5btw1h/tiDC+Z6vV4/UObXKUBhKAwUhsJQGCgMhaEwUBgKA4WhMI52r//odV3Tjv7tjSFvj3P9J9s+/Xln3hiGWRKFgcJQGAqDj7iTv9/2IEnyir3tgn/9hCTXNU4588YwzJIoDBSGwlAYRN0Vf7TinoWkikWE9a95yspCxXEawzBLojBQGApDYRB1P+8rVawsDFyYMIaBwlAYCgOFoTCe6oGrFXufGanYt8IYBgpDYSgMFIbC+ColqxV7L86TD320/c3nnXljGApDYaAwFIbC4COyqxUDX1dRsXvlwDsmBp55YxgKQ2GgMBSGwuAz17z2Wfj/uTt5P05jGAoDhaEwFAYKY+4Vd9sbNwfeC9D23ZMnZO8LTZKHZAzDLInCQGEoDIVB1MQnQdpWAfZe8Ce/+/qn732tqTEMsyQKA4WhMBQGUdnVirZdHtpeQdp2QvZqu6/EGIZZEoWBwlAYCoOoie8EqXjkpGI/iL37cSaXRdoWUIxhKAyFgcJQGAqD8MrAwFseBt6v0baIMPCNJO6twCyJwkBhKAwURrOrYqOEge/FOOVBkuQJGXhbijEMsyQKA4WhMBQG4av4ttWKwDHN27kzeW0/8CaOtvNpDMMsicJAYSgMhUFUyS6b69f2ez+o4jmUtvWCikOq+EbGMMySKAwUhsJQGISveSseExj4k0mnLGEkD379141hmCVRGCgMhaEwqHO1bdbY95W6buKoOM6216lYrcAsCQpDYSgMFMZYgSdB9t4gkLyQHvgC1OSZTx5S2wkxhmGWRGGgMBSGwiCqb9+Kiiv2igv+o98JMvDTjWGYJVEYKAyFoTCIuiv+6NHPYlQcZ3LjT2MYKAyFoTBQGArjq9zf/OWft3dmUsVmFsYwzJIoDBSGwlAYRD1wtWLvu073GnhrhjEMhaEwUBgKQ2EQVbJacfRlfMVbOZIfVPHEStu6hjEMhaEwUBgKQ2EQlV2tGPjP/Lb9ONeXBiqOs+2lHsnjNIZhlkRhoDAUhsIgfG0+8D4IjGGgMBSGwkBhKAyFgcJQGCgMhaEwUBhT/AEkimypfvcv0wAAAABJRU5ErkJggg==" alt="YouTube QR code">
@@ -592,13 +553,13 @@ document.getElementById("qr-"+key).classList.add("active");
 document.getElementById("qrTitle").textContent=name+" QR";
 document.getElementById("qrOpen").href=qrLinks[key];
 document.getElementById("qrModal").classList.add("show");
-document.getElementById("qrModal").setAttribute("aria-hidden","false");
+document.getElementById("qrModal").setAttribute("aria-hidden","false");document.body.classList.add("modal-open");document.getElementById("qrClose")?.focus();
 }
 function closeQR(){
 document.getElementById("qrModal").classList.remove("show");
-document.getElementById("qrModal").setAttribute("aria-hidden","true");
+document.getElementById("qrModal").setAttribute("aria-hidden","true");document.body.classList.remove("modal-open");
 }
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeQR()});
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(document.getElementById("qrModal")?.classList.contains("show")){closeQR();return}if(document.getElementById("gameOverlay")?.classList.contains("open"))document.getElementById("gameClose")?.click()});
 </script>
 
 <script>
@@ -675,25 +636,80 @@ window.addEventListener('load', function(){
 
 <script id="universalDragGravity">
 (function(){
-const cards=[...document.querySelectorAll('.row-wrap')]; if(!cards.length)return;
-const state=new WeakMap(); let active=null;
-cards.forEach(card=>{
-const st={x:0,y:0,px:0,py:0,vx:0,vy:0,down:false,drag:false,fall:false,hold:null,startX:0,startY:0,moved:false}; state.set(card,st);
-const pos=e=>({x:e.clientX,y:e.clientY}); const clearHold=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
-function startHold(){clearHold();st.hold=setTimeout(()=>{if(!st.drag)return;st.drag=false;st.fall=true;active=null;clearHold();st.vy=Math.max(1.2,st.vy);fall();},2000);}
-function begin(e){
-/* Allow the entire social card—including its text, logo and link area—to enter drag mode.
-   A simple tap still becomes a normal click; movement turns it into a drag.
-   QR buttons remain native controls and are intentionally not intercepted. */
-if(e.target && e.target.closest && e.target.closest('.qr-btn')) return;
-if(st.fall||active)return;
-const p=pos(e);st.down=true;st.drag=false;st.moved=false;active=card;st.startX=p.x;st.startY=p.y;st.px=p.x-st.x;st.py=p.y-st.y;st.vx=st.vy=0;if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){} }
-function move(e){if(active!==card||!st.down)return;const p=pos(e),dx=p.x-st.startX,dy=p.y-st.startY;if(!st.drag){if(Math.hypot(dx,dy)<7)return;st.drag=true;st.moved=true;card.classList.add('dragging');startHold();}const nx=p.x-st.px,ny=p.y-st.py;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-10,Math.min(10,st.x*.02))}deg) scale(1.02)`;e.preventDefault();}
-function release(){if(active!==card)return;const wasDrag=st.drag;clearHold();active=null;st.down=false;st.drag=false;card.classList.remove('dragging');if(!wasDrag){st.moved=false;return;}const r=card.getBoundingClientRect();const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;if(outside){st.fall=true;st.vy=Math.max(1.5,st.vy);fall();}else restore();setTimeout(()=>st.moved=false,0);}
-function fall(){let last=performance.now();function tick(now){if(!st.fall)return;const dt=Math.min(32,now-last);last=now;st.vy+=.78*dt/16;st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;st.vx*=.995;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-18,Math.min(18,st.x*.035))}deg)`;if(st.y<innerHeight+260)requestAnimationFrame(tick);else setTimeout(()=>{st.fall=false;st.x=st.y=st.vx=st.vy=0;restore();},2200);}requestAnimationFrame(tick);}
-function restore(){if(st.fall||st.down)return;let last=performance.now();function tick(now){if(st.fall||st.down)return;const dt=Math.min(32,now-last);last=now;st.vx+=(-st.x)*.0028*dt;st.vy+=(-st.y)*.0028*dt;st.vx*=Math.pow(.86,dt/16);st.vy*=Math.pow(.86,dt/16);st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-8,Math.min(8,st.x*.02))}deg)`;if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.35)requestAnimationFrame(tick);else{st.x=st.y=st.vx=st.vy=0;card.style.transform='';}}requestAnimationFrame(tick);}
-card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener('dragstart',e=>e.preventDefault());card.addEventListener('click',e=>{if(st.moved){e.preventDefault();e.stopPropagation();st.moved=false;}},true);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',release,{passive:true});window.addEventListener('pointercancel',release,{passive:true});
-});})();
+  /* Each social link and each QR button is its OWN physics object. A normal click/tap stays a click; a long press of ~2 seconds makes only that object fall. */
+  const targets=[...document.querySelectorAll('.row-wrap .social, .row-wrap .qr-btn')]; if(!targets.length)return;
+  const states=new WeakMap(); let active=null;
+  const getPos=e=>({x:e.clientX,y:e.clientY});
+  targets.forEach(el=>{
+    const st={x:0,y:0,vx:0,vy:0,down:false,drag:false,fall:false,moved:false,hold:null,startX:0,startY:0,offX:0,offY:0,pid:null}; states.set(el,st);
+    const clear=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
+    function apply(){el.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-12,Math.min(12,st.x*.025))}deg) scale(${st.drag&&!st.fall?1.02:1})`;}
+    function restore(){
+      if(st.fall||st.down)return;
+      let last=performance.now();
+      function tick(now){
+        if(st.fall||st.down)return;
+        const dt=Math.min(24,now-last);last=now;
+        st.vx+=(-st.x)*.0030*dt; st.vy+=(-st.y)*.0030*dt;
+        st.vx*=Math.pow(.84,dt/16); st.vy*=Math.pow(.84,dt/16);
+        st.x+=st.vx*dt/16; st.y+=st.vy*dt/16; apply();
+        if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.28)requestAnimationFrame(tick);
+        else{st.x=st.y=st.vx=st.vy=0;el.style.transform='';}
+      }
+      requestAnimationFrame(tick);
+    }
+    function fall(){
+      if(st.fall)return; st.fall=true; el.classList.add('physics-falling');
+      let last=performance.now();
+      function tick(now){
+        if(!st.fall)return;
+        const dt=Math.min(24,now-last);last=now;
+        st.vy+=.72*dt/16; st.x+=st.vx*dt/16; st.y+=st.vy*dt/16; st.vx*=.996; apply();
+        if(st.y<innerHeight+220)requestAnimationFrame(tick);
+        else setTimeout(()=>{st.fall=false;el.classList.remove('physics-falling');st.x=st.y=st.vx=st.vy=0;el.style.transform='';},1700);
+      }
+      requestAnimationFrame(tick);
+    }
+    function begin(e){
+      if(st.fall||active)return;
+      if(e.pointerType==='mouse' && e.button!==0)return;
+      const p=getPos(e); st.down=true;st.drag=false;st.moved=false;st.pid=e.pointerId;
+      active=el;st.startX=p.x;st.startY=p.y;st.offX=p.x-st.x;st.offY=p.y-st.y;st.vx=st.vy=0;
+      if(el.setPointerCapture&&e.pointerId!=null)try{el.setPointerCapture(e.pointerId)}catch(_){ }
+      clear();
+      st.hold=setTimeout(()=>{
+        if(!st.down||active!==el)return;
+        st.drag=true;st.moved=true;active=null;st.down=false;clear();st.vy=Math.max(1.2,st.vy);fall();
+      },2000);
+    }
+    function move(e){
+      if(active!==el||!st.down)return;
+      const p=getPos(e),dx=p.x-st.startX,dy=p.y-st.startY;
+      if(!st.drag && Math.hypot(dx,dy)>=7){st.drag=true;st.moved=true;el.classList.add('physics-dragging');}
+      if(!st.drag)return;
+      const nx=p.x-st.offX,ny=p.y-st.offY;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;apply();
+      if(e.cancelable)e.preventDefault();
+    }
+    function release(e){
+      if(active!==el && !st.down)return;
+      const wasDrag=st.drag;clear();
+      if(active===el)active=null;st.down=false;st.drag=false;el.classList.remove('physics-dragging');
+      if(!wasDrag){setTimeout(()=>st.moved=false,0);return;}
+      const r=el.getBoundingClientRect();
+      const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;
+      if(outside){st.vy=Math.max(1.5,st.vy);fall();}else restore();
+      setTimeout(()=>st.moved=false,0);
+    }
+    el.addEventListener('pointerdown',begin,{passive:true});
+    el.addEventListener('pointermove',move,{passive:false});
+    el.addEventListener('pointerup',release,{passive:true});
+    el.addEventListener('pointercancel',release,{passive:true});
+    el.addEventListener('dragstart',e=>e.preventDefault());
+    el.addEventListener('click',e=>{
+      if(st.moved){e.preventDefault();e.stopPropagation();st.moved=false;}
+    },true);
+  });
+})();
 </script>
 
 <script id="reactionTimeGame">
@@ -709,9 +725,9 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
  function hideGameOver(){GO.classList.remove('show');GO.setAttribute('aria-hidden','true');ST.classList.remove('hidden');}
  function updateHearts(){H.forEach((h,i)=>h.classList.toggle('lost',i>=hearts));}
  function updateCombo(){CO.textContent=combo>=2?'🔥 '+combo+'× COMBO':'';}
- function reset(){clearTimers();active=false;waiting=false;round=0;best=Infinity;last=null;hearts=3;score=0;combo=0;B.classList.remove('show','disappear','perfect-hit','hit-ready');hideGameOver();updateHearts();updateCombo();S.textContent='Press Start to play';R.textContent='';LV.textContent='LEVEL 1';LV.classList.remove('infinite');ST.textContent='START GAME';}
- function open(){O.classList.add('open');O.setAttribute('aria-hidden','false');reset();}
- function close(){clearTimers();active=false;waiting=false;B.classList.remove('show','disappear','perfect-hit','hit-ready');O.classList.remove('open');O.setAttribute('aria-hidden','true');}
+ function reset(){window.resetReactionPause?.();window.reactionAudio?.setGameMode?.(false);clearTimers();active=false;waiting=false;round=0;best=Infinity;last=null;hearts=3;score=0;combo=0;B.classList.remove('show','disappear','perfect-hit','hit-ready');hideGameOver();updateHearts();updateCombo();S.textContent='Press Start to play';R.textContent='';LV.textContent='LEVEL 1';LV.classList.remove('infinite');ST.textContent='START GAME';}
+ function open(){window.reactionAudio?.init?.();O.classList.add('open');O.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');reset();}
+ function close(){window.resetReactionPause?.();window.reactionAudio?.setGameMode?.(false);clearTimers();active=false;waiting=false;B.classList.remove('show','disappear','perfect-hit','hit-ready');O.classList.remove('open');O.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}
  function visible(level){if(level<=10)return 900-(level-1)*50;if(level<=15)return 400-(level-11)*38;if(level<=17)return 225-(level-16)*35;if(level<=20)return 170-(level-18)*35;return Math.max(35,92-Math.floor((level-21)/2)*3);}
  function levelUI(){const l=round+1;if(l>20){LV.innerHTML='∞';LV.classList.add('infinite')}else{LV.textContent='LEVEL '+l;LV.classList.remove('infinite')}}
  function pos(){const p=42,w=A.clientWidth,h=A.clientHeight;let x,y,n=0;do{x=p+Math.random()*Math.max(1,w-2*p);y=p+14+Math.random()*Math.max(1,h-2*p-14);n++;}while(last&&n<70&&Math.hypot(x-last.x,y-last.y)<Math.min(170,Math.min(w,h)*.36));last={x,y};return{x,y};}
@@ -719,7 +735,7 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
  function showGameOver(reason,ms){clearTimers();active=false;waiting=false;B.classList.remove('show','disappear','perfect-hit','hit-ready');ST.classList.add('hidden');GO.classList.add('show');GO.setAttribute('aria-hidden','false');if(reason==='lost'){GT.textContent='LOSER';GR.textContent='Score: '+score+' • All 3 hearts are gone.';}else if(reason==='win'){GT.textContent='WINNER!';GR.textContent='Score: '+score+' • Amazing reaction!';burst(A.clientWidth/2,A.clientHeight/2,80,true);}else{GT.textContent=reason==='miss'?'GAME OVER':'TOO EARLY';GR.textContent=best<Infinity?'Best reaction: '+best+' ms':'Try again and beat the next level.';}S.textContent='Game ended';R.textContent=ms!=null?'Last reaction: '+ms+' ms':'Score: '+score;}
  function loseHeart(){if(window.reactionMenuIsPaused?.())return false;hearts=Math.max(0,hearts-1);combo=0;updateHearts();updateCombo();if(hearts===0){showGameOver('lost');return true;}S.textContent='Missed! '+hearts+' heart'+(hearts===1?'':'s')+' left';R.textContent='Score: '+score+' • Best: '+(best<Infinity?best+' ms':'—');return false;}
  function roundStart(){if(window.reactionMenuIsPaused?.())return;clearTimeout(t);clearTimeout(rt);clearTimeout(vt);clearTimeout(dt);dt=null;if(!active)return;active=true;waiting=true;B.classList.remove('show','disappear','perfect-hit','hit-ready');levelUI();const l=round+1;S.textContent=l>20?'INFINITE — stay sharp…':'Get ready…';ST.textContent=l>20?'∞':'LEVEL '+l;const delay=Math.max(170,900-Math.min(l,50)*20)+Math.random()*900;t=setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;if(!active)return;const p=pos();B.style.left=p.x+'px';B.style.top=p.y+'px';waiting=false;start=performance.now();B.classList.add('show','hit-ready');S.textContent='TAP!';const stay=Math.max(260,visible(l));const out=Math.max(90,Math.min(180,Math.round(stay*.24)));vt=setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;if(!active||waiting)return;B.style.setProperty('--orb-out',out+'ms');B.classList.remove('show','hit-ready');B.classList.add('disappear');dt=setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;if(!active||waiting)return;B.classList.remove('disappear','perfect-hit');if(!loseHeart())rt=setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;roundStart()},260);},out);},Math.max(0,stay-out));},delay);}
- function begin(){window.resumeReactionGame?.();hideGameOver();clearTimers();round=0;best=Infinity;last=null;hearts=3;score=0;combo=0;updateHearts();updateCombo();R.textContent='';levelUI();S.textContent='Watch carefully…';ST.textContent='GET READY…';active=true;rt=setTimeout(roundStart,220);}
+ function begin(){window.resetReactionPause?.();window.reactionAudio?.setGameMode?.(true);window.reactionAudio?.init?.();hideGameOver();clearTimers();round=0;best=Infinity;last=null;hearts=3;score=0;combo=0;updateHearts();updateCombo();R.textContent='';levelUI();S.textContent='Watch carefully…';ST.textContent='GET READY…';active=true;rt=setTimeout(roundStart,220);}
  function hit(e){
     if(window.reactionMenuIsPaused?.())return;
     e.preventDefault();
@@ -755,7 +771,8 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
     clearTimeout(rt);
     vt=dt=rt=t=null;
 
-    const ms=Math.max(0,Math.round(performance.now()-start));
+    const pausedMs=window.reactionPausedTotal?.()||0;
+    const ms=Math.max(0,Math.round(performance.now()-start-pausedMs));
     const orb=B.getBoundingClientRect(),area=A.getBoundingClientRect();
 
     burst(orb.left-area.left+orb.width/2,orb.top-area.top+orb.height/2,30,false);
@@ -798,6 +815,21 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
     },150);
   }
 
+  window.reactionGamePause=function(){
+    clearTimers();
+  };
+  window.reactionGameResume=function(){
+    if(!active)return;
+    // Resume by starting a clean round so no stale timer can cause a false miss. Score/hearts stay intact.
+    clearTimers();
+    B.classList.remove('disappear','perfect-hit');
+    if(!B.classList.contains('show')&&!B.classList.contains('hit-ready')) roundStart();
+    else {
+      const stay=Math.max(260,visible(round+1));
+      vt=setTimeout(()=>{if(window.reactionMenuIsPaused?.()||!active||waiting)return;B.classList.remove('show','hit-ready');B.classList.add('disappear');dt=setTimeout(()=>{if(window.reactionMenuIsPaused?.()||!active)return;B.classList.remove('disappear','perfect-hit');if(!loseHeart())rt=setTimeout(roundStart,260);},140);},stay);
+    }
+  };
+  window.reactionGameRestart=function(){begin()};
   window.reactionResumeRound=function(){if(window.reactionMenuIsPaused?.()||!active)return;if(B.classList.contains('show')||B.classList.contains('hit-ready'))return;B.classList.remove('disappear','perfect-hit','show','hit-ready');roundStart();};
   L.addEventListener('click',open);C.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();close();});ST.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();begin();});RB.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();begin();});A.addEventListener('pointerdown',function(e){
     const r=B.getBoundingClientRect();
@@ -819,72 +851,58 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
 
 <script id="reactionAudioSystem">
 (function(){
-  let ctx=null, master=null, musicGain=null, musicTimer=null, enabled=true, started=false;
-
+  let ctx=null,master=null,musicGain=null,musicTimer=null,gameTimer=null,enabled=true,gameMode=false;
+  const AC=window.AudioContext||window.webkitAudioContext;
   function initAudio(){
-    if(ctx){
-      if(ctx.state==='suspended') ctx.resume();
-      return;
+    if(!AC)return false;
+    if(!ctx){
+      try{
+        ctx=new AC();
+        master=ctx.createGain(); master.gain.value=.82; master.connect(ctx.destination);
+        musicGain=ctx.createGain(); musicGain.gain.value=.30; musicGain.connect(master);
+      }catch(e){ctx=null;return false;}
     }
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)return;
-    ctx=new AC();
-    master=ctx.createGain(); master.gain.value=.18; master.connect(ctx.destination);
-    musicGain=ctx.createGain(); musicGain.gain.value=.035; musicGain.connect(master);
-    started=true;
+    if(ctx.state==='suspended'){try{const p=ctx.resume();if(p?.catch)p.catch(()=>{});}catch(e){}}
     startAmbient();
+    return true;
   }
-
-  function tone(freq,duration,type='sine',gain=.06,when=0,decay=.08){
-    if(!ctx||!master||!enabled)return;
-    const now=ctx.currentTime+(when||0);
-    const o=ctx.createOscillator(),g=ctx.createGain();
+  function tone(freq,duration,type='sine',gain=.07,when=0,decay=.08,bus=master){
+    if(!ctx||!bus||!enabled)return;
+    const now=ctx.currentTime+(when||0),o=ctx.createOscillator(),g=ctx.createGain();
     o.type=type;o.frequency.setValueAtTime(freq,now);
-    g.gain.setValueAtTime(.0001,now);
-    g.gain.exponentialRampToValueAtTime(Math.max(.0001,gain),now+.008);
-    g.gain.exponentialRampToValueAtTime(.0001,now+duration+decay);
-    o.connect(g);g.connect(master);o.start(now);o.stop(now+duration+decay+.02);
+    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(.0001,gain),now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+duration+decay);
+    o.connect(g);g.connect(bus);o.start(now);o.stop(now+duration+decay+.02);
   }
-
-  function click(){ tone(560,.045,'sine',.07); tone(920,.035,'triangle',.035,.012); }
-  function perfect(){ tone(720,.08,'triangle',.07); tone(1080,.12,'sine',.055,.055); }
-  function miss(){ tone(170,.12,'sawtooth',.045); }
-  function start(){ tone(440,.08,'sine',.045); tone(660,.1,'triangle',.05,.08); }
-  function winner(){ tone(523,.12,'triangle',.07); tone(659,.12,'triangle',.065,.1); tone(784,.2,'sine',.07,.2); }
-
+  function click(){tone(560,.055,'sine',.13);tone(920,.045,'triangle',.075,.015)}
+  function perfect(){tone(720,.09,'triangle',.10);tone(1080,.14,'sine',.075,.055)}
+  function miss(){tone(170,.15,'sawtooth',.065)}
+  function start(){tone(440,.09,'sine',.065);tone(660,.11,'triangle',.07,.08)}
+  function winner(){tone(523,.13,'triangle',.10);tone(659,.13,'triangle',.09,.1);tone(784,.22,'sine',.10,.2)}
   function ambientBeat(){
     if(!ctx||!musicGain||!enabled)return;
     const now=ctx.currentTime;
-    const o=ctx.createOscillator(),g=ctx.createGain();
-    o.type='sine';
-    o.frequency.setValueAtTime(110,now);
-    g.gain.setValueAtTime(.0001,now);
-    g.gain.exponentialRampToValueAtTime(.018,now+.12);
-    g.gain.exponentialRampToValueAtTime(.0001,now+1.15);
-    o.connect(g);g.connect(musicGain);o.start(now);o.stop(now+1.2);
+    const notes=gameMode?[110,138.59,164.81,196]:[98,123.47,146.83,164.81];
+    const n=notes[Math.floor(Date.now()/1800)%notes.length];
+    tone(n,.90,'sine',gameMode?.075:.060,0,.22,musicGain);
+    tone(n*2,.30,'triangle',gameMode?.032:.024,.18,.12,musicGain);
   }
   function startAmbient(){
+    if(!ctx||!musicGain)return;
     if(musicTimer)clearInterval(musicTimer);
-    ambientBeat();
-    musicTimer=setInterval(ambientBeat,1800);
+    ambientBeat();musicTimer=setInterval(ambientBeat,1800);
   }
-
+  function setGameMode(on){gameMode=!!on;startAmbient();}
   window.reactionAudio={
-    init:initAudio, click, perfect, miss, start, winner,
+    init:initAudio,click,perfect,miss,start,winner,setGameMode,
     toggle:function(){
       enabled=!enabled;
-      if(master)master.gain.value=enabled?.18:0;
-      if(enabled){initAudio();startAmbient();}
+      if(enabled){initAudio();startAmbient();}else if(master)master.gain.setTargetAtTime(0,ctx.currentTime,.035);
+      if(enabled&&master)master.gain.setTargetAtTime(.82,ctx.currentTime,.08);
       return enabled;
     },
-    isEnabled:function(){return enabled}
+    isEnabled:()=>enabled
   };
-
-  document.addEventListener('pointerdown',function(e){
-    if(e.target.closest && e.target.closest('#gameLauncher,#gameStart,#reactionArea,#gameClose')){
-      initAudio();
-    }
-  },{passive:true});
+  document.addEventListener('pointerdown',()=>initAudio(),{passive:true});
 })();
 </script>
 
@@ -900,17 +918,11 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
     const orb=document.getElementById('reactionOrb');
     const launcher=document.getElementById('gameLauncher');
     const area=document.getElementById('reactionArea');
-    const toggle=document.getElementById('audioToggle');
 
     launcher?.addEventListener('click',()=>a.init());
-    start?.addEventListener('click',()=>{a.init();a.start();});
-    close?.addEventListener('click',()=>a.init());
+    start?.addEventListener('click',()=>{a.init();a.start();a.setGameMode?.(true);});
+    close?.addEventListener('click',()=>{a.init();a.setGameMode?.(false);});
 
-    toggle?.addEventListener('click',function(e){
-      e.preventDefault();e.stopPropagation();
-      const on=a.toggle();
-      this.textContent=on?'🔊 SOUND':'🔇 MUTED';
-    });
 
     orb?.addEventListener('pointerdown',function(){
       a.init();
@@ -918,7 +930,7 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
 
     // A missed tap anywhere else in the playfield gets a subtle miss sound.
     area?.addEventListener('pointerdown',function(e){
-      if(e.target!==orb && !e.target.closest?.('#gameStart,.audio-toggle'))a.miss();
+      if(e.target!==orb && !e.target.closest?.('#gameStart,.audio-toggle,#reactionGameControlsBtn,#reactionGameControlsPanel,#reactionSoundCorner'))a.miss();
     },true);
 
     // Detect winner/game-over text changes and play a celebration sound once.
@@ -936,112 +948,96 @@ card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener(
 })();
 </script>
 
-<!-- Compact reaction-game controls -->
-<div id="reactionGameMenu">
-  <button id="reactionGameMenuBtn" type="button" aria-label="Game options">⋮</button>
-  <div id="reactionGameMenuPanel">
-    <button class="reactionMenuItem" id="reactionPauseBtn" type="button">
-      <span class="reactionMenuIcon">⏸</span><span id="reactionPauseLabel">Pause Game</span>
-    </button>
-    <button class="reactionMenuItem" id="reactionRestartBtn" type="button">
-      <span class="reactionMenuIcon">↻</span><span>Restart Game</span>
-    </button>
-    <button class="reactionMenuItem" id="reactionSoundBtn" type="button">
-      <span class="reactionMenuIcon">🔊</span><span id="reactionSoundLabel">Sound On</span>
-    </button>
-  </div>
-</div>
-<div id="reactionPauseShade" aria-hidden="true">
-  <div class="reactionPauseCard">
-    <div style="font-size:20px;font-weight:700;margin-bottom:5px">Game Paused</div>
-    <div style="font-size:12px;opacity:.7">Open the menu to resume.</div>
-  </div>
-</div>
-
-
 <script id="reactionGameMenuLogic">
 (function(){
   function setup(){
-    const menu=document.getElementById('reactionGameMenu');
-    const btn=document.getElementById('reactionGameMenuBtn');
-    const soundBtn=document.getElementById('reactionSoundBtn');
-    const soundLabel=document.getElementById('reactionSoundLabel');
-    const soundIcon=soundBtn?.querySelector('.reactionMenuIcon');
-
+    const soundBtn=document.getElementById('reactionSoundCorner');
+    const soundIcon=soundBtn?.querySelector('svg');
     const controls=document.getElementById('reactionGameControlsPanel');
     const controlsBtn=document.getElementById('reactionGameControlsBtn');
     const pauseBtn=document.getElementById('reactionPauseBtn');
     const restartBtn=document.getElementById('reactionRestartBtn');
     const pauseLabel=document.getElementById('reactionPauseLabel');
-
-    if(!menu||!btn||!soundBtn||!controls||!controlsBtn||!pauseBtn||!restartBtn)return;
-
-    function closeMenu(){menu.classList.remove('open');}
-    function closeControls(){
-      controls.classList.remove('open');
-      controls.setAttribute('aria-hidden','true');
-    }
-
-    btn.addEventListener('click',e=>{
-      e.preventDefault();e.stopPropagation();
-      menu.classList.toggle('open');
-      closeControls();
-    });
-
-    controlsBtn.addEventListener('click',e=>{
-      e.preventDefault();e.stopPropagation();
-      controls.classList.toggle('open');
-      controls.setAttribute('aria-hidden',controls.classList.contains('open')?'false':'true');
-      closeMenu();
-    });
-
-    document.addEventListener('pointerdown',e=>{
-      if(!menu.contains(e.target))closeMenu();
-      if(!controls.contains(e.target) && e.target!==controlsBtn)closeControls();
-    },true);
-
-    pauseBtn.addEventListener('click',e=>{
-      e.preventDefault();e.stopPropagation();
-      const isPaused=typeof window.reactionMenuIsPaused==='function' && window.reactionMenuIsPaused();
-      if(isPaused){
-        if(typeof window.resumeReactionGame==='function')window.resumeReactionGame();
-        pauseLabel.textContent='Pause Game';
-        pauseBtn.querySelector('span').textContent='⏸';
-      }else{
-        if(typeof window.pauseReactionGame==='function')window.pauseReactionGame();
-        pauseLabel.textContent='Resume Game';
-        pauseBtn.querySelector('span').textContent='▶';
-      }
-      closeControls();
-    });
-
-    restartBtn.addEventListener('click',e=>{
-      e.preventDefault();e.stopPropagation();
-      if(typeof window.restartReactionGame==='function')window.restartReactionGame();
-      pauseLabel.textContent='Pause Game';
-      pauseBtn.querySelector('span').textContent='⏸';
-      closeControls();
-    });
-
+    if(!soundBtn||!controls||!controlsBtn||!pauseBtn||!restartBtn)return;
+    const updateSound=()=>{
+      const on=window.reactionAudio?.isEnabled?.()!==false;
+      soundBtn.classList.toggle('muted',!on);
+      soundBtn.setAttribute('aria-label',on?'Sound On':'Sound Off');
+      soundBtn.title=on?'Sound On':'Sound Off';
+      soundBtn.innerHTML=on
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path d="m17 9 4 6M21 9l-4 6"/></svg>';
+    };
     soundBtn.addEventListener('click',e=>{
       e.preventDefault();e.stopPropagation();
-      let on=true;
-      try{
-        if(window.reactionAudio?.toggle)on=window.reactionAudio.toggle();
-        else if(window.finalAudio?.toggle)on=window.finalAudio.toggle();
-      }catch(_){}
-      soundLabel.textContent=on?'Sound On':'Sound Off';
-      if(soundIcon)soundIcon.textContent=on?'🔊':'🔇';
-      closeMenu();
+      window.reactionAudio?.init?.();
+      const on=window.reactionAudio?.toggle?.();
+      if(on!==undefined)updateSound();
     });
+    controlsBtn.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      const open=controls.classList.toggle('open');
+      controls.setAttribute('aria-hidden',open?'false':'true');
+    });
+    pauseBtn.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      const paused=window.reactionMenuIsPaused?.()===true;
+      if(paused) window.resumeReactionGame?.(); else window.pauseReactionGame?.();
+      const nowPaused=window.reactionMenuIsPaused?.()===true;
+      pauseLabel.textContent=nowPaused?'Resume Game':'Pause Game';
+      pauseBtn.querySelector('span')?.replaceChildren(document.createTextNode(nowPaused?'▶':'⏸'));
+      controls.classList.remove('open');controls.setAttribute('aria-hidden','true');
+    });
+    restartBtn.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      window.restartReactionGame?.();
+      pauseLabel.textContent='Pause Game';
+      pauseBtn.querySelector('span')?.replaceChildren(document.createTextNode('⏸'));
+      controls.classList.remove('open');controls.setAttribute('aria-hidden','true');
+    });
+    document.addEventListener('pointerdown',e=>{
+      if(!controls.contains(e.target) && e.target!==controlsBtn){controls.classList.remove('open');controls.setAttribute('aria-hidden','true');}
+    },true);
+    updateSound();
   }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
-  else setup();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
 </script>
 
 
 
-<script id="reactionPauseResumeBridge">(function(){function ready(){window.addEventListener('reaction-game-resumed',function(){const area=document.getElementById('reactionArea'),orb=document.getElementById('reactionOrb'),status=document.getElementById('reactionStatus');if(!area||!orb)return;if(orb.classList.contains('show')||orb.classList.contains('hit-ready')){status.textContent='TAP!';setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;if(!orb.classList.contains('show')&&!orb.classList.contains('hit-ready'))return;orb.classList.remove('show','hit-ready');orb.classList.add('disappear');setTimeout(()=>{if(window.reactionMenuIsPaused?.())return;orb.classList.remove('disappear');document.getElementById('reactionStatus').textContent='Get ready…';const start=document.getElementById('gameStart');if(start&&start.classList.contains('hidden')){const ev=new Event('click',{bubbles:true});/* do not reset score */window.dispatchEvent(new CustomEvent('reaction-resume-round'))}},650)}},700)}else{status.textContent='Get ready…';window.dispatchEvent(new CustomEvent('reaction-resume-round'))}})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready()})();</script><script id="reactionPauseAPI">(function(){let paused=false;function setup(){const close=document.getElementById('reactionAreaClose');close?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();document.getElementById('gameClose')?.click()});window.pauseReactionGame=function(){if(paused)return;paused=true;const orb=document.getElementById('reactionOrb');if(orb)orb.style.animationPlayState='paused';window.dispatchEvent(new CustomEvent('reaction-game-paused'))};window.resumeReactionGame=function(){if(!paused)return;paused=false;const orb=document.getElementById('reactionOrb');if(orb)orb.style.animationPlayState='';window.dispatchEvent(new CustomEvent('reaction-game-resumed'))};window.restartReactionGame=function(){paused=false;document.getElementById('gameRestart')?.click()};window.reactionMenuIsPaused=()=>paused}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup()})();</script><script id="reactionPauseResumeBridge">(function(){function ready(){window.addEventListener('reaction-game-resumed',function(){setTimeout(function(){if(window.reactionMenuIsPaused?.())return;window.reactionResumeRound?.()},0)})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready()})();</script></body>
+<script id="reactionPauseController">
+(function(){
+  let paused=false,pauseStarted=0,pausedTotal=0;
+  function shade(show){const sh=document.getElementById('reactionPauseShade');if(!sh)return;sh.classList.toggle('show',show);sh.setAttribute('aria-hidden',show?'false':'true');}
+  function syncLabel(){const b=document.getElementById('reactionPauseBtn'),l=document.getElementById('reactionPauseLabel');if(l)l.textContent=paused?'Resume Game':'Pause Game';if(b){const s=b.querySelector('span');if(s)s.textContent=paused?'▶':'⏸';}}
+  function setup(){
+    const orb=document.getElementById('reactionOrb');
+    window.reactionMenuIsPaused=()=>paused;
+    window.reactionPausedTotal=()=>pausedTotal;
+    window.pauseReactionGame=function(){
+      if(paused)return; paused=true; pauseStarted=performance.now();
+      window.reactionGamePause?.();
+      if(orb)orb.style.animationPlayState='paused';
+      shade(true);syncLabel();
+    };
+    window.resumeReactionGame=function(){
+      if(!paused)return;
+      paused=false;if(pauseStarted){pausedTotal+=performance.now()-pauseStarted;pauseStarted=0}
+      if(orb)orb.style.animationPlayState='';
+      shade(false);syncLabel();
+      window.reactionGameResume?.();
+    };
+    window.resetReactionPause=function(){paused=false;pauseStarted=0;pausedTotal=0;if(orb)orb.style.animationPlayState='';shade(false);syncLabel()};
+    window.restartReactionGame=function(){
+      window.resetReactionPause();
+      const restart=document.getElementById('gameRestart');
+      if(restart){restart.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));}
+      else window.reactionGameRestart?.();
+    };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
+})();
+</script>
+</body>
 </html>
