@@ -171,12 +171,16 @@ body.page-ready .particle{
 
 /* Interactive physics: social cards can be dragged and dropped */
 .row-wrap{
-  touch-action:none;
+  touch-action:auto;
   cursor:grab;
   user-select:none;
   -webkit-user-select:none;
   will-change:transform;
 }
+.row-wrap.dragging{
+  touch-action:none;
+}
+
 .row-wrap.dragging{
   cursor:grabbing;
   z-index:50;
@@ -651,95 +655,19 @@ window.addEventListener('load', function(){
 
 <script id="universalDragGravity">
 (function(){
-  const cards=[...document.querySelectorAll('.row-wrap')];
-  if(!cards.length)return;
-
-  const state=new WeakMap();
-  let active=null;
-
-  cards.forEach(card=>{
-    state.set(card,{x:0,y:0,px:0,py:0,vx:0,vy:0,drag:false,fall:false,hold:null,restore:null});
-
-    const st=state.get(card);
-
-    function pos(e){
-      return e.touches&&e.touches[0] ? {x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY};
-    }
-    function clearHold(){if(st.hold){clearTimeout(st.hold);st.hold=null;}}
-
-    function begin(e){
-      if(st.fall)return;
-      const p=pos(e);
-      st.drag=true; active=card;
-      st.px=p.x-st.x; st.py=p.y-st.y; st.vx=st.vy=0;
-      card.classList.add('dragging');
-      clearHold();
-      st.hold=setTimeout(()=>{
-        if(!st.drag)return;
-        st.drag=false; st.fall=true; active=null; clearHold();
-        st.vy=Math.max(1.2,st.vy);
-        fall();
-      },2000);
-      if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){}
-      e.preventDefault();
-    }
-
-    function move(e){
-      if(active!==card||!st.drag)return;
-      const p=pos(e);
-      const nx=p.x-st.px, ny=p.y-st.py;
-      st.vx=nx-st.x; st.vy=ny-st.y; st.x=nx; st.y=ny;
-      card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-10,Math.min(10,st.x*.02))}deg) scale(1.02)`;
-      e.preventDefault();
-    }
-
-    function release(){
-      if(active!==card)return;
-      clearHold(); active=null; st.drag=false; card.classList.remove('dragging');
-      const r=card.getBoundingClientRect();
-      const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;
-      if(outside){st.fall=true;st.vy=Math.max(1.5,st.vy);fall();}
-      else restore();
-    }
-
-    function fall(){
-      let last=performance.now();
-      function tick(now){
-        if(!st.fall)return;
-        const dt=Math.min(32,now-last);last=now;
-        st.vy+=.78*dt/16; st.x+=st.vx*dt/16; st.y+=st.vy*dt/16; st.vx*=.995;
-        card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-18,Math.min(18,st.x*.035))}deg)`;
-        if(st.y<innerHeight+260)requestAnimationFrame(tick);
-        else{
-          st.restore=setTimeout(()=>{st.fall=false;st.x=st.y=st.vx=st.vy=0;restore();},2200);
-        }
-      }
-      requestAnimationFrame(tick);
-    }
-
-    function restore(){
-      if(st.fall||st.drag)return;
-      let last=performance.now();
-      function tick(now){
-        if(st.fall||st.drag)return;
-        const dt=Math.min(32,now-last);last=now;
-        st.vx+=(-st.x)*.0028*dt;st.vy+=(-st.y)*.0028*dt;
-        st.vx*=Math.pow(.86,dt/16);st.vy*=Math.pow(.86,dt/16);
-        st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;
-        card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-8,Math.min(8,st.x*.02))}deg)`;
-        if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.35)requestAnimationFrame(tick);
-        else{st.x=st.y=st.vx=st.vy=0;card.style.transform='';}
-      }
-      requestAnimationFrame(tick);
-    }
-
-    card.addEventListener('pointerdown',begin,{passive:false});
-    card.addEventListener('dragstart',e=>e.preventDefault());
-    window.addEventListener('pointermove',move,{passive:false});
-    window.addEventListener('pointerup',release,{passive:true});
-    window.addEventListener('pointercancel',release,{passive:true});
-  });
-})();
+const cards=[...document.querySelectorAll('.row-wrap')]; if(!cards.length)return;
+const state=new WeakMap(); let active=null;
+cards.forEach(card=>{
+const st={x:0,y:0,px:0,py:0,vx:0,vy:0,down:false,drag:false,fall:false,hold:null,startX:0,startY:0,moved:false}; state.set(card,st);
+const pos=e=>({x:e.clientX,y:e.clientY}); const clearHold=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
+function startHold(){clearHold();st.hold=setTimeout(()=>{if(!st.drag)return;st.drag=false;st.fall=true;active=null;clearHold();st.vy=Math.max(1.2,st.vy);fall();},2000);}
+function begin(e){if(st.fall||active)return;const p=pos(e);st.down=true;st.drag=false;st.moved=false;active=card;st.startX=p.x;st.startY=p.y;st.px=p.x-st.x;st.py=p.y-st.y;st.vx=st.vy=0;if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){} }
+function move(e){if(active!==card||!st.down)return;const p=pos(e),dx=p.x-st.startX,dy=p.y-st.startY;if(!st.drag){if(Math.hypot(dx,dy)<7)return;st.drag=true;st.moved=true;card.classList.add('dragging');startHold();}const nx=p.x-st.px,ny=p.y-st.py;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-10,Math.min(10,st.x*.02))}deg) scale(1.02)`;e.preventDefault();}
+function release(){if(active!==card)return;const wasDrag=st.drag;clearHold();active=null;st.down=false;st.drag=false;card.classList.remove('dragging');if(!wasDrag){st.moved=false;return;}const r=card.getBoundingClientRect();const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;if(outside){st.fall=true;st.vy=Math.max(1.5,st.vy);fall();}else restore();setTimeout(()=>st.moved=false,0);}
+function fall(){let last=performance.now();function tick(now){if(!st.fall)return;const dt=Math.min(32,now-last);last=now;st.vy+=.78*dt/16;st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;st.vx*=.995;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-18,Math.min(18,st.x*.035))}deg)`;if(st.y<innerHeight+260)requestAnimationFrame(tick);else setTimeout(()=>{st.fall=false;st.x=st.y=st.vx=st.vy=0;restore();},2200);}requestAnimationFrame(tick);}
+function restore(){if(st.fall||st.down)return;let last=performance.now();function tick(now){if(st.fall||st.down)return;const dt=Math.min(32,now-last);last=now;st.vx+=(-st.x)*.0028*dt;st.vy+=(-st.y)*.0028*dt;st.vx*=Math.pow(.86,dt/16);st.vy*=Math.pow(.86,dt/16);st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-8,Math.min(8,st.x*.02))}deg)`;if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.35)requestAnimationFrame(tick);else{st.x=st.y=st.vx=st.vy=0;card.style.transform='';}}requestAnimationFrame(tick);}
+card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener('dragstart',e=>e.preventDefault());card.addEventListener('click',e=>{if(st.moved){e.preventDefault();e.stopPropagation();st.moved=false;}},true);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',release,{passive:true});window.addEventListener('pointercancel',release,{passive:true});
+});})();
 </script>
 
 <script id="reactionTimeGame">
