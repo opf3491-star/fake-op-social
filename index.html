@@ -190,10 +190,6 @@ body.page-ready .particle{
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.28));
 }
 
-/* Smooth, independent drag physics for each social link and QR button */
-.row-wrap .social,.row-wrap .qr-btn{will-change:transform;touch-action:manipulation;user-select:none;-webkit-user-select:none;}
-.row-wrap .social.physics-dragging,.row-wrap .qr-btn.physics-dragging{cursor:grabbing;z-index:60;transition:none!important;box-shadow:0 16px 34px rgba(0,0,0,.30),0 0 20px rgba(164,86,255,.16);}
-.row-wrap .social.physics-falling,.row-wrap .qr-btn.physics-falling{z-index:70;transition:none!important;pointer-events:none;}
 /* Mini Reaction Game — corner launcher + premium modal */
 .game-launcher{
   position:fixed;right:16px;bottom:16px;z-index:80;
@@ -679,80 +675,25 @@ window.addEventListener('load', function(){
 
 <script id="universalDragGravity">
 (function(){
-  /* Each social link and each QR button is its OWN physics object. A normal click/tap stays a click; a long press of ~2 seconds makes only that object fall. */
-  const targets=[...document.querySelectorAll('.row-wrap .social, .row-wrap .qr-btn')]; if(!targets.length)return;
-  const states=new WeakMap(); let active=null;
-  const getPos=e=>({x:e.clientX,y:e.clientY});
-  targets.forEach(el=>{
-    const st={x:0,y:0,vx:0,vy:0,down:false,drag:false,fall:false,moved:false,hold:null,startX:0,startY:0,offX:0,offY:0,pid:null}; states.set(el,st);
-    const clear=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
-    function apply(){el.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-12,Math.min(12,st.x*.025))}deg) scale(${st.drag&&!st.fall?1.02:1})`;}
-    function restore(){
-      if(st.fall||st.down)return;
-      let last=performance.now();
-      function tick(now){
-        if(st.fall||st.down)return;
-        const dt=Math.min(24,now-last);last=now;
-        st.vx+=(-st.x)*.0030*dt; st.vy+=(-st.y)*.0030*dt;
-        st.vx*=Math.pow(.84,dt/16); st.vy*=Math.pow(.84,dt/16);
-        st.x+=st.vx*dt/16; st.y+=st.vy*dt/16; apply();
-        if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.28)requestAnimationFrame(tick);
-        else{st.x=st.y=st.vx=st.vy=0;el.style.transform='';}
-      }
-      requestAnimationFrame(tick);
-    }
-    function fall(){
-      if(st.fall)return; st.fall=true; el.classList.add('physics-falling');
-      let last=performance.now();
-      function tick(now){
-        if(!st.fall)return;
-        const dt=Math.min(24,now-last);last=now;
-        st.vy+=.72*dt/16; st.x+=st.vx*dt/16; st.y+=st.vy*dt/16; st.vx*=.996; apply();
-        if(st.y<innerHeight+220)requestAnimationFrame(tick);
-        else setTimeout(()=>{st.fall=false;el.classList.remove('physics-falling');st.x=st.y=st.vx=st.vy=0;el.style.transform='';},1700);
-      }
-      requestAnimationFrame(tick);
-    }
-    function begin(e){
-      if(st.fall||active)return;
-      if(e.pointerType==='mouse' && e.button!==0)return;
-      const p=getPos(e); st.down=true;st.drag=false;st.moved=false;st.pid=e.pointerId;
-      active=el;st.startX=p.x;st.startY=p.y;st.offX=p.x-st.x;st.offY=p.y-st.y;st.vx=st.vy=0;
-      if(el.setPointerCapture&&e.pointerId!=null)try{el.setPointerCapture(e.pointerId)}catch(_){ }
-      clear();
-      st.hold=setTimeout(()=>{
-        if(!st.down||active!==el)return;
-        st.drag=true;st.moved=true;active=null;st.down=false;clear();st.vy=Math.max(1.2,st.vy);fall();
-      },2000);
-    }
-    function move(e){
-      if(active!==el||!st.down)return;
-      const p=getPos(e),dx=p.x-st.startX,dy=p.y-st.startY;
-      if(!st.drag && Math.hypot(dx,dy)>=7){st.drag=true;st.moved=true;el.classList.add('physics-dragging');}
-      if(!st.drag)return;
-      const nx=p.x-st.offX,ny=p.y-st.offY;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;apply();
-      if(e.cancelable)e.preventDefault();
-    }
-    function release(e){
-      if(active!==el && !st.down)return;
-      const wasDrag=st.drag;clear();
-      if(active===el)active=null;st.down=false;st.drag=false;el.classList.remove('physics-dragging');
-      if(!wasDrag){setTimeout(()=>st.moved=false,0);return;}
-      const r=el.getBoundingClientRect();
-      const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;
-      if(outside){st.vy=Math.max(1.5,st.vy);fall();}else restore();
-      setTimeout(()=>st.moved=false,0);
-    }
-    el.addEventListener('pointerdown',begin,{passive:true});
-    el.addEventListener('pointermove',move,{passive:false});
-    el.addEventListener('pointerup',release,{passive:true});
-    el.addEventListener('pointercancel',release,{passive:true});
-    el.addEventListener('dragstart',e=>e.preventDefault());
-    el.addEventListener('click',e=>{
-      if(st.moved){e.preventDefault();e.stopPropagation();st.moved=false;}
-    },true);
-  });
-})();
+const cards=[...document.querySelectorAll('.row-wrap')]; if(!cards.length)return;
+const state=new WeakMap(); let active=null;
+cards.forEach(card=>{
+const st={x:0,y:0,px:0,py:0,vx:0,vy:0,down:false,drag:false,fall:false,hold:null,startX:0,startY:0,moved:false}; state.set(card,st);
+const pos=e=>({x:e.clientX,y:e.clientY}); const clearHold=()=>{if(st.hold){clearTimeout(st.hold);st.hold=null;}};
+function startHold(){clearHold();st.hold=setTimeout(()=>{if(!st.drag)return;st.drag=false;st.fall=true;active=null;clearHold();st.vy=Math.max(1.2,st.vy);fall();},2000);}
+function begin(e){
+/* Allow the entire social card—including its text, logo and link area—to enter drag mode.
+   A simple tap still becomes a normal click; movement turns it into a drag.
+   QR buttons remain native controls and are intentionally not intercepted. */
+if(e.target && e.target.closest && e.target.closest('.qr-btn')) return;
+if(st.fall||active)return;
+const p=pos(e);st.down=true;st.drag=false;st.moved=false;active=card;st.startX=p.x;st.startY=p.y;st.px=p.x-st.x;st.py=p.y-st.y;st.vx=st.vy=0;if(card.setPointerCapture&&e.pointerId!=null)try{card.setPointerCapture(e.pointerId)}catch(_){} }
+function move(e){if(active!==card||!st.down)return;const p=pos(e),dx=p.x-st.startX,dy=p.y-st.startY;if(!st.drag){if(Math.hypot(dx,dy)<7)return;st.drag=true;st.moved=true;card.classList.add('dragging');startHold();}const nx=p.x-st.px,ny=p.y-st.py;st.vx=nx-st.x;st.vy=ny-st.y;st.x=nx;st.y=ny;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-10,Math.min(10,st.x*.02))}deg) scale(1.02)`;e.preventDefault();}
+function release(){if(active!==card)return;const wasDrag=st.drag;clearHold();active=null;st.down=false;st.drag=false;card.classList.remove('dragging');if(!wasDrag){st.moved=false;return;}const r=card.getBoundingClientRect();const outside=r.bottom<-40||r.top>innerHeight+40||r.right<-40||r.left>innerWidth+40;if(outside){st.fall=true;st.vy=Math.max(1.5,st.vy);fall();}else restore();setTimeout(()=>st.moved=false,0);}
+function fall(){let last=performance.now();function tick(now){if(!st.fall)return;const dt=Math.min(32,now-last);last=now;st.vy+=.78*dt/16;st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;st.vx*=.995;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-18,Math.min(18,st.x*.035))}deg)`;if(st.y<innerHeight+260)requestAnimationFrame(tick);else setTimeout(()=>{st.fall=false;st.x=st.y=st.vx=st.vy=0;restore();},2200);}requestAnimationFrame(tick);}
+function restore(){if(st.fall||st.down)return;let last=performance.now();function tick(now){if(st.fall||st.down)return;const dt=Math.min(32,now-last);last=now;st.vx+=(-st.x)*.0028*dt;st.vy+=(-st.y)*.0028*dt;st.vx*=Math.pow(.86,dt/16);st.vy*=Math.pow(.86,dt/16);st.x+=st.vx*dt/16;st.y+=st.vy*dt/16;card.style.transform=`translate3d(${st.x}px,${st.y}px,0) rotate(${Math.max(-8,Math.min(8,st.x*.02))}deg)`;if(Math.abs(st.x)+Math.abs(st.y)+Math.abs(st.vx)+Math.abs(st.vy)>.35)requestAnimationFrame(tick);else{st.x=st.y=st.vx=st.vy=0;card.style.transform='';}}requestAnimationFrame(tick);}
+card.addEventListener('pointerdown',begin,{passive:true});card.addEventListener('dragstart',e=>e.preventDefault());card.addEventListener('click',e=>{if(st.moved){e.preventDefault();e.stopPropagation();st.moved=false;}},true);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',release,{passive:true});window.addEventListener('pointercancel',release,{passive:true});
+});})();
 </script>
 
 <script id="reactionTimeGame">
@@ -888,8 +829,8 @@ window.addEventListener('load', function(){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
     ctx=new AC();
-    master=ctx.createGain(); master.gain.value=.26; master.connect(ctx.destination);
-    musicGain=ctx.createGain(); musicGain.gain.value=.055; musicGain.connect(master);
+    master=ctx.createGain(); master.gain.value=.18; master.connect(ctx.destination);
+    musicGain=ctx.createGain(); musicGain.gain.value=.035; musicGain.connect(master);
     started=true;
     startAmbient();
   }
@@ -905,7 +846,7 @@ window.addEventListener('load', function(){
     o.connect(g);g.connect(master);o.start(now);o.stop(now+duration+decay+.02);
   }
 
-  function click(){ tone(560,.045,'sine',.11); tone(920,.035,'triangle',.06,.012); }
+  function click(){ tone(560,.045,'sine',.07); tone(920,.035,'triangle',.035,.012); }
   function perfect(){ tone(720,.08,'triangle',.07); tone(1080,.12,'sine',.055,.055); }
   function miss(){ tone(170,.12,'sawtooth',.045); }
   function start(){ tone(440,.08,'sine',.045); tone(660,.1,'triangle',.05,.08); }
@@ -939,8 +880,11 @@ window.addEventListener('load', function(){
     isEnabled:function(){return enabled}
   };
 
-  document.addEventListener('pointerdown',function(){ initAudio(); },{passive:true});
-  window.addEventListener('load',function(){ setTimeout(initAudio,250); },{once:true});
+  document.addEventListener('pointerdown',function(e){
+    if(e.target.closest && e.target.closest('#gameLauncher,#gameStart,#reactionArea,#gameClose')){
+      initAudio();
+    }
+  },{passive:true});
 })();
 </script>
 
